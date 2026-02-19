@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Hub | 数字仪表盘</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #d0bcff;
+            --surface: #0f0f12;
+            --on-surface: #e6e1e5;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-hover: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.1);
+            
+            /* 品牌色 */
+            --color-bili: #fb7299;
+            --color-tg: #24A1DE;
+            --color-cloud: #0ea5e9;
+            --color-email: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'PingFang SC', sans-serif;
+            background-color: var(--surface);
+            color: var(--on-surface);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* --- 动态氛围背景 --- */
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            background: 
+                radial-gradient(circle at 15% 25%, #2b1f4d 0%, transparent 35%),
+                radial-gradient(circle at 85% 75%, #1a3a4a 0%, transparent 35%),
+                radial-gradient(circle at 50% 50%, #0f0f12 0%, #000 100%);
+        }
+
+        .bg-noise {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.04;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* --- 布局容器 --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
+            width: 95%;
+            max-width: 1100px;
+            padding: 40px 20px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 卡片基础样式 */
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 30px;
+            transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+
+        /* --- 左侧主区域 --- */
+        .main-info { grid-row: span 3; display: flex; flex-direction: column; gap: 20px; }
+        .user-profile { display: flex; align-items: center; gap: 20px; margin-bottom: 10px; }
+        .avatar { width: 85px; height: 85px; border-radius: 24px; object-fit: cover; background: #222; }
+        
+        .status-chip {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(208, 188, 255, 0.1);
+            color: var(--primary);
+            padding: 6px 14px; border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+        }
+        .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* 超大链接按钮组 */
+        .links-container { display: flex; flex-direction: column; gap: 14px; }
+        .big-link {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 24px 28px; background: rgba(255,255,255,0.03);
+            border-radius: 20px; text-decoration: none; color: white;
+            font-size: 1.15rem; font-weight: 600; transition: 0.3s;
+            border: 1px solid transparent;
+        }
+        .big-link i { font-size: 1.5rem; width: 35px; }
+        .big-link:hover { transform: translateX(10px); background: var(--glass-hover); border-color: var(--primary); }
+
+        /* 各品牌悬停色 */
+        .btn-gh:hover { border-color: #fff; }
+        .btn-bili:hover { border-color: var(--color-bili); color: var(--color-bili); }
+        .btn-tg:hover { border-color: var(--color-tg); color: var(--color-tg); }
+        .btn-cloud:hover { border-color: var(--color-cloud); color: var(--color-cloud); }
+        .btn-mail:hover { border-color: var(--color-email); color: var(--color-email); }
+
+        /* --- 右侧组件 --- */
+        .widget-time { text-align: center; display: flex; flex-direction: column; justify-content: center; }
+        #clock { font-size: 3.2rem; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+        #date { opacity: 0.5; font-size: 0.9rem; letter-spacing: 2px; margin-top: 5px; }
+
+        .widget-tech { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tech-pill { padding: 6px 14px; background: rgba(255,255,255,0.05); border-radius: 10px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05); }
+
+        .widget-music { display: flex; align-items: center; gap: 15px; }
+        .music-bars { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
+        .bar { width: 3px; background: var(--primary); animation: music 0.8s infinite alternate; }
+        @keyframes music { from { height: 4px; } to { height: 18px; } }
+
+        /* 移动端适配 */
+        @media (max-width: 850px) {
+            .dashboard { grid-template-columns: 1fr; padding: 30px 15px; }
+            .main-info { grid-row: auto; }
+            #clock { font-size: 2.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-mesh"></div>
+    <div class="bg-noise"></div>
+
+    <main class="dashboard">
+        <section class="card main-info">
+            <div class="user-profile">
+                <img src="https://via.placeholder.com/150" alt="Avatar" class="avatar">
+                <div>
+                    <div class="status-chip"><span class="status-dot"></span> 正在创造中</div>
+                    <h1 style="font-size: 2.2rem; margin-top: 5px;">[你的名字]</h1>
+                </div>
+            </div>
+            
+            <p style="opacity: 0.6; line-height: 1.6; font-size: 0.95rem;">
+                探索代码的边界，分享生活的瞬间。欢迎来到我的数字仪表盘。
+            </p>
+
+            <div class="links-container">
+                <a href="https://github.com/你的用户名" target="_blank" class="big-link btn-gh">
+                    <span><i class="fab fa-github"></i> GitHub</span>
+                    <i class="fas fa-chevron-right" style="font-size: 1rem; opacity: 0.3;"></i>
+                </a>
+                
+                <a href="https://space.bilibili.com/你的UID" target="_blank" class="big-link btn-bili">
+                    <span><i class="fa-brands fa-bilibili"></i> Bilibili</span>
+                    <i class="fas fa-chevron-right" style="font-size: 1rem; opacity: 0.3;"></i>
+                </a>
+
+                <a href="https://t.me/你的用户名" target="_blank" class="big-link btn-tg">
+                    <span><i class="fa-brands fa-telegram"></i> Telegram</span>
+                    <i class="fa-solid fa-paper-plane" style="font-size: 1rem; opacity: 0.3;"></i>
+                </a>
+
+                <a href="你的云盘链接" target="_blank" class="big-link btn-cloud">
+                    <span><i class="fa-solid fa-cloud"></i> 公开云盘</span>
+                    <i class="fas fa-chevron-right" style="font-size: 1rem; opacity: 0.3;"></i>
+                </a>
+
+                <a href="mailto:你的邮箱@example.com" class="big-link btn-mail">
+                    <span><i class="fa-solid fa-envelope"></i> 联系邮箱</span>
+                    <i class="fas fa-at" style="font-size: 1rem; opacity: 0.3;"></i>
+                </a>
+            </div>
+        </section>
+
+        <section class="card widget-time">
+            <div id="clock">00:00:00</div>
+            <div id="date">2026年2月19日 星期四</div>
+        </section>
+
+        <section class="card widget-tech">
+            <h3 style="width: 100%; margin-bottom: 10px; font-size: 0.8rem; opacity: 0.4; text-transform: uppercase; letter-spacing: 1px;">技术栈 / Stack</h3>
+            <div class="tech-pill">Python</div>
+            <div class="tech-pill">JavaScript</div>
+            <div class="tech-pill">Vue.js</div>
+            <div class="tech-pill">Docker</div>
+            <div class="tech-pill">UI Design</div>
+        </section>
+
+        <section class="card widget-music">
+            <div class="music-bars">
+                <div class="bar" style="animation-delay: 0.0s;"></div>
+                <div class="bar" style="animation-delay: 0.2s;"></div>
+                <div class="bar" style="animation-delay: 0.4s;"></div>
+                <div class="bar" style="animation-delay: 0.1s;"></div>
+            </div>
+            <div>
+                <div style="font-weight: 600; font-size: 0.85rem;">正在沉浸式思考</div>
+                <div style="font-size: 0.75rem; opacity: 0.4;">Focusing on Coding...</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 更新时钟
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+            document.getElementById('clock').innerText = timeStr;
+            
+            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('date').innerText = now.toLocaleDateString('zh-CN', dateOptions);
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+    </script>
+</body>
+</html>
